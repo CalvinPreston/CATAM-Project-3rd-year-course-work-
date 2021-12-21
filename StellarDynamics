@@ -1,0 +1,108 @@
+% Programming task for CATAM 23.1 - Generating a consistent self-graviating 
+% system
+
+% Functions defined for recall throughout
+    
+f = @(e) 3/(2*(pi)^3)*( ((3-4*e)*((2*e)^0.5))/(1-2*e) - 3*asinh(((2*e)/(1-2*e))^0.5) );
+g = @(e) 8*pi^(2)*(((1-2*e)^(0.5))*(3-14*e-8*e^2)/(12*e^2) - pi + ((1-6*e+16*e^2)/((2*e)^(2.5)))*acos(-(1-2*e)^(0.5)) );
+
+    % Constants and maximum values used in acceptance-rejection algorithm 
+    % to identify if random value occur in phase space
+    
+    rT =100; % Maximum value or radius - tidal radius
+    fmax = 2.884*10^(-3);
+    emax = 0.5;
+    Vmax = sqrt(2*emax); % Maximum values given in the question
+    a = 1;
+    M = 1;
+    G = 1; % Simplification of constants
+    n = 5000;
+    N = 1;
+    k=1;
+    phasespaceRV = zeros(19,n); % MAIN ARRAY ADDED TO THROUGHOUT THE
+                                % PROJECT - ALL ROWS FOR ENTIRE PROJECTED
+                                % DESCRIBED HERE FROM OUTSET
+  % Rows of this vector follow:
+   % Row 1 - Generated r
+    % Row 2 - Generated v
+     % Row 3 - Bin size assigned 
+      % Row 4 - Square of generated velocity given
+       % Row 5 - Generated x
+        % Row 6 - Generated y
+         % Row 7 - Generated z
+          % Row 8 - Generated vx
+           % Row 9 - Generated vy
+            % Row 10 - Generated vz
+             % Row 11 - Lx
+              % Row 12 - Ly
+               % Row 13 - Lz
+                % Row 14 - L^2 sum
+                 % Row 15 - Linear addition of momentum
+                  % Row 16 - v.x (scalar product) value 
+                   % Row 17 - Row 16 divided by r
+                    % Row 18 - Row 17 squared 
+                     % Row 19 - Renormalised mass
+                    
+    epsilonMC = zeros(1,N);  % Defining vectors for use in loop below
+
+    % While loop that randomly generates a radius and velocity and then
+    % calculates an epsilon given these, such that f(e) can then be found
+    % and compared, along with its maximum, a uniform-randomly generated
+    % number between 0 and 1, as in keeping with the acceptance-rejection
+    % algorithm
+
+while N<=n
+Rr = rT*rand;
+Vr = Vmax*rand;
+e = -0.5*(Vr)^2 + ((G*M)/2)*((Rr+a)^2-Rr^2)/(Rr+a)^2;
+F = ((Rr/a)^2)*((Vr^2/(M/a)))*f(e);
+if F>0 % Ensures we ignore unphysical results
+    comp = F/fmax;
+    xsi = rand;
+    if xsi <= comp
+    phasespaceRV(1,N) = Rr;
+    phasespaceRV(2,N) = Vr;
+    N=N+1; 
+    else 
+    end 
+end
+end
+while k<=n
+    % Calculating our epsilon values for the Monte-Carlo generated values
+    % of Rr and Vr
+epsilonMC(k) = -0.5*(phasespaceRV(2,k))^2 + ((G*M)/2)*((phasespaceRV(1,k)+a)^2-phasespaceRV(1,k)^2)/(phasespaceRV(1,k)+a)^2;
+k=k+1;
+end 
+
+for k=1:n
+  phasespaceRV(19,k) = 1/5000;  
+end 
+% Historgram plot with bins set at 50. Normalization included over area,
+% not probability, to gain the required form
+
+histogram(epsilonMC,50, 'Normalization','pdf')  
+
+    hold on
+    y1 = zeros(1,500);
+y2 = zeros(1,500);
+E = zeros(1,500);
+n=1;
+
+f = @(e) 3/(2*(pi)^3)*( ((3-4*e)*((2*e)^0.5))/(1-2*e) - 3*asinh(((2*e)/(1-2*e))^0.5) );
+g = @(e) 8*pi^(2)*(((1-2*e)^(0.5))*(3-14*e-8*e^2)/(12*e^2) - pi + ((1-6*e+16*e^2)/((2*e)^(2.5)))*acos(-(1-2*e)^(0.5)) );
+
+for e =  0.001:0.001:0.5
+y1(n) = f(e);
+y2(n) = g(e);
+E(n) = e;
+n = n+1;
+end 
+
+plot(E,(y1.*y2),'linewidth', 1.5 )
+grid on
+title('Numerical and analytical differential energy distribution')
+xlabel('$\epsilon$','interpreter','latex')
+ylabel('$\frac{dM}{d\epsilon}$','interpreter','latex')
+hYLabel = get(gca,'YLabel');
+set(hYLabel,'rotation',0,'VerticalAlignment','middle')
+legend('Numerical','Analytical')
